@@ -1,9 +1,43 @@
 import streamlit as st
 import datetime
+import pandas as pd
+import os
 
 # Настройка страницы
 st.set_page_config(page_title="Задачи по Python", page_icon="🐍")
 
+# --- Функция для сохранения результатов ---
+DATA_FILE = "results.csv"
+
+def save_submission(name, group, task_num, points, code_text):
+    # Создаем строку с данными
+    new_data = pd.DataFrame({
+        "Время": [datetime.datetime.now().strftime('%H:%M:%S')],
+        "Имя": [name.strip()],
+        "Группа": [group],
+        "Задача": [task_num],
+        "Баллы": [points],
+        "Код": [code_text]
+    })
+    
+    # Если файл есть, дописываем в конец, если нет - создаем
+    if not os.path.exists(DATA_FILE):
+        new_data.to_csv(DATA_FILE, index=False)
+    else:
+        new_data.to_csv(DATA_FILE, mode='a', header=False, index=False)
+
+# --- Боковая панель: Таблица лидеров ---
+st.sidebar.header("Таблица лидеров 🏆")
+if os.path.exists(DATA_FILE):
+    df = pd.read_csv(DATA_FILE)
+    # Группируем по имени и суммируем баллы
+    leaderboard = df.groupby("Имя")["Баллы"].sum().sort_values(ascending=False).reset_index()
+    # Выводим красивую таблицу без индексов
+    st.sidebar.dataframe(leaderboard, hide_index=True, use_container_width=True)
+else:
+    st.sidebar.info("Пока нет сданных задач. Будь первым!")
+
+# --- Основной интерфейс ---
 st.title("Практикум по Python 🐍")
 
 # Выбор группы
@@ -34,33 +68,16 @@ tasks_advanced = {
 
 st.divider()
 
-# Блок с заданиями для начинающих
 if group == "Начинающие":
     st.header("Задачи для начинающих")
     st.markdown("В этих задачах нельзя использовать условия (`if/else`) и циклы. Только переменные, ввод/вывод и математика!")
-    
-    st.markdown(f"**1. {tasks_beginner[1][0]} (+{tasks_beginner[1][1]} баллов).** Напиши программу, которая спрашивает имя и возраст, а затем выводит приветствие и возраст в следующем году.")
-    st.markdown(f"**2. {tasks_beginner[2][0]} (+{tasks_beginner[2][1]} баллов).** Считаем стоимость конфет (цена за 1 кг * вес) и сдачу с 1000.")
-    st.markdown(f"**3. {tasks_beginner[3][0]} (+{tasks_beginner[3][1]} баллов).** N школьников делят K яблок. Выведи, сколько достанется каждому и сколько останется (используй `//` и `%`).")
-    st.markdown(f"**4. {tasks_beginner[4][0]} (+{tasks_beginner[4][1]} баллов).** Прошло N минут с начала суток. Выведи время в формате Часы:Минуты.")
-    st.markdown(f"**5. {tasks_beginner[5][0]} (+{tasks_beginner[5][1]} баллов).** В 3 классах a, b и c учеников. За партой сидят двое. Сколько парт нужно? (Формула `(n+1)//2`).")
-    st.markdown(f"**6. {tasks_beginner[6][0]} (+{tasks_beginner[6][1]} баллов).** Пользователь вводит стороны прямоугольника a и b. Выведи его площадь и периметр.")
-    st.markdown(f"**7. {tasks_beginner[7][0]} (+{tasks_beginner[7][1]} баллов).** Даны две переменные. Поменяй их значения местами и выведи на экран.")
-    st.markdown(f"**8. {tasks_beginner[8][0]} (+{tasks_beginner[8][1]} баллов).** Дано целое число. Выведи его последнюю цифру (используй `% 10`).")
-    st.markdown(f"**9. {tasks_beginner[9][0]} (+{tasks_beginner[9][1]} баллов).** Пользователь вводит трехзначное число (например, 123). Найди сумму его цифр (1+2+3=6).")
-    st.markdown(f"**10. {tasks_beginner[10][0]} (+{tasks_beginner[10][1]} баллов).** Машина проезжает N км в день. За сколько дней она проедет M км? (Формула `(M + N - 1) // N`).")
-
-# Блок с заданиями для продвинутых
+    for k, v in tasks_beginner.items():
+        st.markdown(f"**{k}. {v[0]} (+{v[1]} баллов).**")
 else:
-    st.header("Задачи для продвинутых (олимпиадное программирование)")
+    st.header("Задачи для продвинутых")
     st.markdown("Здесь важна не только правильность, но и алгоритмическая сложность!")
-    
-    st.markdown(f"**1. {tasks_advanced[1][0]} (+{tasks_advanced[1][1]} баллов).** Напиши функцию сжатия строки: `AAAABBBCCXYZ` → `A4B3C2XYZ`.")
-    st.markdown(f"**2. {tasks_advanced[2][0]} (+{tasks_advanced[2][1]} баллов).** Функция `is_anagram(s1, s2)`. Без встроенной сортировки, сложность O(n).")
-    st.markdown(f"**3. {tasks_advanced[3][0]} (+{tasks_advanced[3][1]} баллов).** Найти длину самой длинной подстроки без повторяющихся символов (`abcabcbb` -> 3).")
-    st.markdown(f"**4. {tasks_advanced[4][0]} (+{tasks_advanced[4][1]} баллов).** Объединить пересекающиеся интервалы: `[[1, 3], [2, 6], [8, 10]]` → `[[1, 6], [8, 10]]`.")
-    st.markdown(f"**5. {tasks_advanced[5][0]} (+{tasks_advanced[5][1]} баллов).** Реализуй бинарный поиск числа в отсортированном массиве. Верни индекс или -1. Сложность O(log n).")
-    st.markdown(f"**6. {tasks_advanced[6][0]} (+{tasks_advanced[6][1]} баллов).** Дан массив чисел и число `target`. Верни индексы двух чисел, дающих в сумме `target` (используй словарь, O(n)).")
+    for k, v in tasks_advanced.items():
+        st.markdown(f"**{k}. {v[0]} (+{v[1]} баллов).**")
 
 st.divider()
 
@@ -68,27 +85,34 @@ st.divider()
 st.header("Сдача решения")
 student_name = st.text_input("Ваше имя:")
 
-# Динамический выбор задачи в зависимости от группы
 current_tasks = tasks_beginner if group == "Начинающие" else tasks_advanced
 task_options = [f"Задача {k}: {v[0]} ({v[1]} баллов)" for k, v in current_tasks.items()]
 selected_task_str = st.selectbox("Какую задачу вы сдаете?", task_options)
 
-# Извлекаем номер задачи из строки
 task_num = int(selected_task_str.split(":")[0].replace("Задача ", ""))
 points_for_task = current_tasks[task_num][1]
 
-# Варианты сдачи: текст или фото
 submission_type = st.radio("Как будете сдавать?", ["Вставить код текстом", "Загрузить фото экрана"])
 
+code_content = ""
 if submission_type == "Вставить код текстом":
-    code_input = st.text_area("Вставьте ваш код сюда:", height=150)
+    code_content = st.text_area("Вставьте ваш код сюда:", height=150)
 else:
     photo_input = st.file_uploader("Сделайте фото кода или прикрепите скриншот", type=['jpg', 'jpeg', 'png'])
+    if photo_input is not None:
+        code_content = f"Фото загружено: {photo_input.name}"
 
 if st.button("Отправить решение", type="primary"):
     if not student_name:
         st.error("Пожалуйста, введите ваше имя!")
+    elif submission_type == "Вставить код текстом" and not code_content.strip():
+         st.error("Пожалуйста, вставьте код!")
+    elif submission_type == "Загрузить фото экрана" and not code_content:
+         st.error("Пожалуйста, загрузите фотографию!")
     else:
-        st.success(f"Отлично, {student_name}! Ваше решение отправлено на проверку в {datetime.datetime.now().strftime('%H:%M')}.")
-        st.info(f"Если решение верное, вы получите **{points_for_task} баллов**!")
+        # Сохраняем в CSV
+        save_submission(student_name, group, task_num, points_for_task, code_content)
+        
+        st.success(f"Отлично, {student_name}! Ваше решение отправлено.")
+        st.info(f"Вам начислено **{points_for_task} баллов**! Посмотрите в таблицу лидеров слева (возможно, понадобится обновить страницу).")
         st.balloons()
